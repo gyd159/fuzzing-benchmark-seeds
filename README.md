@@ -47,36 +47,20 @@ Each `seeds/` directory contains the initial seed corpus used for the correspond
 
 The benchmark programs used in this study include MAGMA benchmarks, FuzzBench benchmarks, and real-world programs.
 
-## MAGMA Benchmarks
+### MAGMA Benchmarks
 
 The MAGMA targets were prepared by applying the corresponding setup patches and vulnerability patches, and then compiled with AFL LLVM mode and AddressSanitizer.
 
 Included programs:
 
-- `libpng`: MAGMA libpng target with PNG vulnerability patches.
-- `libsndfile`: MAGMA libsndfile target with SND vulnerability patches.
-- `lua`: MAGMA Lua target with LUA vulnerability patches.
-- `php`: MAGMA PHP target with PHP vulnerability patches.
-- `poppler`: MAGMA poppler target with PDF vulnerability patches.
-- `sqlite3`: MAGMA SQLite target with SQL vulnerability patches.
+- `libpng`
+- `libsndfile`
+- `lua`
+- `php`
+- `poppler`
+- `sqlite3`
 
-### MAGMA Build Process
-
-The general patching process is shown below:
-
-```bash
-cd /path/to/target/source
-
-patch -p1 --fuzz=3 < /path/to/magma/targets/<target>/patches/setup/<setup_patch>
-
-for p in /path/to/magma/targets/<target>/patches/bugs/*.patch; do
-  patch -p1 < "$p"
-done
-```
-
-After applying the patches, the target programs were compiled using AFL LLVM mode and AddressSanitizer.
-
-The initial seed directories are:
+Initial seed directories:
 
 ```text
 libpng/seeds/
@@ -87,25 +71,25 @@ poppler/seeds/
 sqlite3/seeds/
 ```
 
-## FuzzBench Benchmarks
+### FuzzBench Benchmarks
 
-The FuzzBench targets were compiled using AFL LLVM mode and AddressSanitizer.
+The FuzzBench targets were compiled with AFL LLVM mode and AddressSanitizer.
 
 Included programs:
 
-- `bloaty`: FuzzBench bloaty target.
-- `re2`: FuzzBench RE2 target.
+- `bloaty`
+- `re2`
 
-The initial seed directories are:
+Initial seed directories:
 
 ```text
 bloaty/seeds/
 re2/seeds/
 ```
 
-## Real-world Programs
+### Real-world Programs
 
-The real-world targets were selected from `binutils-2.40` and compiled using AFL LLVM mode and AddressSanitizer.
+The real-world targets were selected from `binutils-2.40` and compiled with AFL LLVM mode and AddressSanitizer.
 
 Included programs:
 
@@ -118,7 +102,7 @@ Included programs:
 - `size`
 - `strip-new`
 
-The initial seed directories are:
+Initial seed directories:
 
 ```text
 as-new/seeds/
@@ -131,11 +115,9 @@ size/seeds/
 strip-new/seeds/
 ```
 
-## General Build Environment
+## General AFL Build Environment
 
-All target programs were instrumented using AFL LLVM mode and compiled with AddressSanitizer.
-
-The general compilation environment is:
+The following environment was used for AFL LLVM instrumentation and ASan compilation:
 
 ```bash
 export AFL_PATH=/path/to/AFL
@@ -145,7 +127,6 @@ export CC=/path/to/AFL/afl-clang-fast
 export CXX=/path/to/AFL/afl-clang-fast++
 
 export AFL_USE_ASAN=1
-
 export CFLAGS="-O1 -g -fno-omit-frame-pointer -fsanitize=address"
 export CXXFLAGS="$CFLAGS"
 export LDFLAGS="-fsanitize=address"
@@ -155,15 +136,67 @@ export LSAN_OPTIONS='detect_leaks=0:symbolize=0'
 export AFL_SKIP_CPUFREQ=1
 ```
 
-Before compiling the target programs, AFL LLVM mode should be built:
+AFL LLVM mode was built before compiling the target programs:
 
 ```bash
 make -C /path/to/AFL/llvm_mode
 ```
 
-## AFL Execution Example
+## MAGMA Build Notes
 
-The general AFL execution command is:
+For MAGMA targets, the corresponding setup patches and vulnerability patches were applied before compilation.
+
+General patching process:
+
+```bash
+cd /path/to/target/source
+
+patch -p1 --fuzz=3 < /path/to/magma/targets/<target>/patches/setup/<setup_patch>
+
+for p in /path/to/magma/targets/<target>/patches/bugs/*.patch; do
+  patch -p1 < "$p"
+done
+```
+
+After patching, the target programs were compiled with `afl-clang-fast` or `afl-clang-fast++` and ASan.
+
+## FuzzBench Build Notes
+
+For FuzzBench targets, the corresponding FuzzBench target source and harness were compiled with AFL LLVM mode and ASan.
+
+The main AFL targets used in the experiments were:
+
+```text
+bloaty: fuzz_target_afl
+re2: fuzzer_afl
+```
+
+## Real-world Build Notes
+
+The real-world targets were built from `binutils-2.40`.
+
+Build command:
+
+```bash
+cd /path/to/real_project/build-afl-asan
+
+export AFL_USE_ASAN=1
+export ASAN_OPTIONS='abort_on_error=1:symbolize=0:detect_leaks=0:allocator_may_return_null=1'
+
+export CC=/path/to/AFL/afl-clang-fast
+export CXX=/path/to/AFL/afl-clang-fast++
+
+../binutils-2.40/configure \
+  --disable-shared \
+  --disable-nls \
+  --disable-werror
+
+make
+```
+
+## AFL Running Format
+
+The general AFL running format was:
 
 ```bash
 /path/to/AFL/afl-fuzz \
@@ -174,7 +207,7 @@ The general AFL execution command is:
   -- /path/to/target_binary @@
 ```
 
-Example:
+For example:
 
 ```bash
 /path/to/AFL/afl-fuzz \
